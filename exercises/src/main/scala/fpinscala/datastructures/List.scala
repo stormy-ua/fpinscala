@@ -1,5 +1,7 @@
 package fpinscala.datastructures
 
+import scala.annotation.tailrec
+
 sealed trait List[+A] // `List` data type, parameterized on a type, `A`
 case object Nil extends List[Nothing] // A `List` data constructor representing the empty list
 /* Another data constructor, representing nonempty lists. Note that `tail` is another `List[A]`,
@@ -50,19 +52,64 @@ object List { // `List` companion object. Contains functions for creating and wo
     foldRight(ns, 1.0)(_ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
 
-  def tail[A](l: List[A]): List[A] = sys.error("todo")
+  def tail[A](l: List[A]): List[A] =
+    l match {
+      case Nil => Nil
+      case Cons(x, xs) => xs
+    }
 
-  def setHead[A](l: List[A], h: A): List[A] = sys.error("todo")
+  def setHead[A](l: List[A], h: A): List[A] =
+    l match {
+      case Nil => Nil
+      case Cons(x, xs) => Cons(h, xs)
+    }
 
-  def drop[A](l: List[A], n: Int): List[A] = sys.error("todo")
+  @tailrec
+  def drop[A](l: List[A], n: Int): List[A] =
+    l match {
+      case Nil => Nil
+      case Cons(x, xs) if n > 0 => drop(xs, n - 1)
+      case _ => l
+    }
 
-  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = sys.error("todo")
+  @tailrec
+  def dropWhile[A](l: List[A], f: A => Boolean): List[A] =
+    l match {
+      case Nil => Nil
+      case Cons(x, xs) if f(x) => dropWhile(xs, f)
+      case _ => l
+    }
 
-  def init[A](l: List[A]): List[A] = sys.error("todo")
+  def init[A](l: List[A]): List[A] = {
+    @tailrec
+    def loop(a: List[A], acc: List[A]): List[A] =
+      a match {
+        case Nil => Nil
+        case Cons(x, Cons(y, Nil)) => Cons(x, acc)
+        case Cons(x, xs) => loop(xs, Cons(x, acc))
+      }
 
-  def length[A](l: List[A]): Int = sys.error("todo")
+    loop(l, Nil)
+  }
 
-  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = sys.error("todo")
+  def length[A](l: List[A]): Int = {
+    @tailrec
+    def loop(a: List[A], acc: Int): Int =
+      a match {
+        case Nil => acc
+        case Cons(x, xs) => loop(xs, acc + 1)
+      }
 
-  def map[A,B](l: List[A])(f: A => B): List[B] = sys.error("todo")
+    loop(l, 0)
+  }
+
+  @tailrec
+  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B =
+    l match {
+      case Nil => z
+      case Cons(x, xs) => foldLeft(xs, f(z, x))(f)
+    }
+
+  def map[A,B](l: List[A])(f: A => B): List[B] =
+    foldRight[A, List[B]](l, Nil)((a, b) => Cons(f(a), b))
 }
