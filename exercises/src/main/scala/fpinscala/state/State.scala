@@ -1,4 +1,6 @@
-package fpinscala.state
+import scala.annotation.tailrec
+
+//package fpinscala.state
 
 
 trait RNG {
@@ -30,23 +32,58 @@ object RNG {
       (f(a), rng2)
     }
 
-  def nonNegativeInt(rng: RNG): (Int, RNG) = ???
+  def nonNegativeInt(rng: RNG): (Int, RNG) = {
+    val (r, rng2) = rng.nextInt
+    (if (r < 0) -(r + 1) else r, rng2)
+  }
 
-  def double(rng: RNG): (Double, RNG) = ???
 
-  def intDouble(rng: RNG): ((Int,Double), RNG) = ???
+  def double(rng: RNG): (Double, RNG) = {
+    val (r, rng2) = nonNegativeInt(rng)
+    (r/(Int.MaxValue.toDouble + 1), rng2)
+  }
 
-  def doubleInt(rng: RNG): ((Double,Int), RNG) = ???
+  def intDouble(rng: RNG): ((Int,Double), RNG) = {
+    val (i, rng2) = rng.nextInt
+    val (d, rng3) = RNG.double(rng2)
+    ((i, d), rng3)
+  }
 
-  def double3(rng: RNG): ((Double,Double,Double), RNG) = ???
+  def doubleInt(rng: RNG): ((Double,Int), RNG) = {
+    val (d, rng2) = RNG.double(rng)
+    val (i, rng3) = rng2.nextInt
+    ((d, i), rng3)
+  }
 
-  def ints(count: Int)(rng: RNG): (List[Int], RNG) = ???
+  def double3(rng: RNG): ((Double,Double,Double), RNG) = {
+    val (d1, rng2) = RNG.double(rng)
+    val (d2, rng3) = RNG.double(rng2)
+    val (d3, rng4) = RNG.double(rng3)
+    ((d1, d2, d3), rng4)
+  }
 
-  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
+  def ints(count: Int)(rng: RNG): (List[Int], RNG) = {
+    @tailrec
+    def loop(count: Int, acc: (List[Int], RNG)): (List[Int], RNG) = {
+      val (l, rng) = acc
+      val (i, rng2) = rng.nextInt
+      if (count > 0) loop(count - 1, (i::l, rng2)) else acc
+    }
 
-  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
+    loop(count, (Nil, rng))
+  }
 
-  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
+  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    rng => {
+      val (a, ra2) = ra(rng)
+      val (b, rb2) = rb(ra2)
+
+      (f(a, b), rb2)
+    }
+
+  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = sys.error("todo")
+
+  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = sys.error("todo")
 }
 
 case class State[S,+A](run: S => (A, S)) {
@@ -66,5 +103,5 @@ case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object State {
   type Rand[A] = State[RNG, A]
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = sys.error("todo")
 }
